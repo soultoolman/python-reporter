@@ -2,6 +2,7 @@
 """
 python-reporter:
 """
+import re
 import os
 import sys
 import json
@@ -81,6 +82,16 @@ class Report(object):
 
         # initialize empty data dict
         self._data = OrderedDict()
+
+    @classmethod
+    def from_stdout(cls, stdout, backend=None):
+        match = re.search(r'<Report: (?P<report_id>\w+)>', stdout)
+        if not match:
+            raise ReporterError("Can't parse report_id.")
+        report_id = match.groupdict()['report_id']
+        if not backend:
+            backend = FileBackend()
+        return cls(report_id, backend)
 
     def __repr__(self):
         return f'<Report: {self.report_id}>'
