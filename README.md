@@ -43,9 +43,47 @@ report_id = report.save()
 
 ### 保存方式
 
-`reporter`默认只支持一种保存方式`FileBackend`，即变量以json形式保存到文件中，分3种情况：
+`reporter`支持两种种保存方式：
 
-1. 指定保存地址
+1. `DatabaseBackend`，即变量保存到数据库（默认）
+2. `FileBackend`，即变量以json形式保存到文件中
+
+#### DatabaseBackend
+
+注意：需要先初始化数据库。例如：
+
+```python
+backend = reporter.DatabaseBackend('sqlite:////path/to/reporter.db')
+backend.create_table()
+```
+
+1. 在程序内部指定数据库连接
+
+```
+report = reporter.Report(
+    backend=reporter.DatabaseBackend('sqlite:////path/to/reporter.db')
+)
+```
+
+2. 通过环境变量指定数据库连接
+
+```shell
+export REPORTER_DB_URL = 'sqlite:////path/to/reporter.db'
+```
+
+```python
+report = reporter.Report()
+```
+
+3. 使用默认数据库连接（即保存SQLite文件到当前目录）
+
+```python
+report = reporter.Report()
+```
+
+#### FileBackend
+
+1. 在程序内部指定保存地址
 
 ```python
 report = reporter.Report(backend=reporter.FileBackend('/path/to/reporter'))
@@ -53,22 +91,22 @@ report = reporter.Report(backend=reporter.FileBackend('/path/to/reporter'))
 
 那么报告以文件保存到`/path/to/reporter/`文件夹下，文件名为`reporter-report-xxx.json`。
 
-2. 指定环境变量`REPORTER_DIR`
+2. 通过环境变量指定保存地址
 
 ```shell
 export REPORTER_DIR=/path/to/reporter
 ```
 
 ```python
-report = reporter.Report()
+report = reporter.Report(backend=reporter.FileBackend())
 ```
 
 那么报告以文件保存到`/path/to/reporter/`文件夹下，文件名为`reporter-report-xxx.json`。
 
-3. 保存到当前目录
+3. 使用默认目录（即当前目录）
 
 ```python
-report = reporter.Report()
+report = reporter.Report(backend=reporter.FileBackend())
 ```
 
 那么报告以文件保存到当前目录下，文件名为`reporter-report-xxx.json`。

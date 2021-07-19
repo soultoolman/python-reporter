@@ -7,15 +7,16 @@ from setuptools import setup, find_packages
 
 # Package meta-data.
 NAME = 'python-reporter'
-DESCRIPTION = 'a Python library and command line tool to make GEO data into gold.'
+DESCRIPTION = '一个可以保存Python脚本任何中间结果的工具'
 URL = 'https://github.com/soultoolman/python-reporter'
 EMAIL = 'soultooman@gmail.com'
 AUTHOR = 'soultoolman'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
+    'sqlalchemy',
 ]
 
 # What packages are optional?

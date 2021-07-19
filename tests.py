@@ -88,7 +88,7 @@ class TestReport(object):
     def test_init_report_backend1(self):
         if 'REPORTER_DIR' in os.environ:
             del os.environ['REPORTER_DIR']
-        report = reporter.Report()
+        report = reporter.Report(backend=reporter.FileBackend())
         assert isinstance(report.backend, reporter.FileBackend)
         assert report.backend._reporter_dir == '.'
 

@@ -10,6 +10,10 @@ import codecs
 import logging
 from uuid import UUID, uuid4
 from collections import OrderedDict
+from contextlib import contextmanager
+
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Column, Integer, String, Text, create_engine
 
 
 logger = logging.getLogger('reporter')
@@ -65,6 +69,66 @@ class FileBackend(Backend):
             json.dump(data, fp)
 
 
+class DatabaseBackend(object):
+
+    Base = declarative_base()
+
+    class Model(Base):
+        __tablename__ = 'report'
+
+        id = Column(Integer, primary_key=True)
+        report_id = Column(String(128), unique=True)
+        data = Column(Text)
+
+    def __init__(self, reporter_db_url=None):
+        if not reporter_db_url:
+            reporter_db_url = os.environ.get('REPORTER_DB_URL', 'sqlite:///./REPORTER.db')
+        self.reporter_db_url = reporter_db_url
+
+    def create_engine(self):
+        return create_engine(self.reporter_db_url)
+
+    @contextmanager
+    def create_session(self):
+        session = sessionmaker(bind=self.create_engine())()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    def create_table(self):
+        self.Base.metadata.create_all(self.create_engine())
+
+    def report_exists(self, report_id):
+        with self.create_session() as session:
+            report = session.query(self.Model).filter_by(
+                report_id=report_id
+            ).first()
+            return report is not None
+
+    def load(self, report_id):
+        with self.create_session() as session:
+            report = session.query(self.Model).filter_by(
+                report_id=report_id
+            ).first()
+            if not report:
+                raise ReporterError(f"report {report_id} doesn't exists.")
+            return json.loads(report.data)
+
+    def save(self, report_id, data):
+        with self.create_session() as session:
+            report = self.Model(
+                report_id=report_id,
+                data=json.dumps(data)
+            )
+            session.add(report)
+            session.commit()
+
+
+def get_default_backend():
+    return DatabaseBackend()
+
+
 class Report(object):
     def __init__(self, report_id=None, backend=None):
         if report_id is None:
@@ -77,7 +141,7 @@ class Report(object):
 
         # backend
         if not backend:
-            backend = FileBackend()
+            backend = get_default_backend()
         self.backend = backend
 
         # initialize empty data dict
@@ -90,7 +154,7 @@ class Report(object):
             raise ReporterError("Can't parse report_id.")
         report_id = match.groupdict()['report_id']
         if not backend:
-            backend = FileBackend()
+            backend = get_default_backend()
         return cls(report_id, backend)
 
     def __repr__(self):
